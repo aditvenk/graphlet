@@ -4,9 +4,10 @@ A tiny, torch-free graph IR + compiler + bytecode capture to build intuition for
 
 ## Features
 - Minimal **IR** (`graphlet.graph`)
-- **Compiler** with DCE (`graphlet.compiler`, `graphlet.passes`)
+- **Compiler** with DCE + constant folding (`graphlet.compiler`, `graphlet.passes`)
 - **Executor** to run graphs eagerly (`graphlet.runtime.execute`)
-- **Bytecode capture** and **hybrid JIT** (`graphlet.capture`)
+- **Bytecode capture** and **region JIT** (`graphlet.capture`)
+- **Debug tracer** to visualize capture and execution (`GRAPHLET_DEBUG=1`)
 
 ## Demos
 
@@ -20,30 +21,7 @@ python -m examples.demo_dce
 python -m examples.demo_capture
 ```
 
-### 3) Hybrid: captured region + Python fallback
-```bash
-python -m examples.demo_hybrid
-```
-This runs a captured, optimized sub-function while the rest of the program executes under the normal Python interpreter—mimicking Dynamo-style partitioning.
-
-## Dev
-```bash
-python -m pip install -U pip
-pip install -e ".[dev]"
-pytest
-```
-
-## Notes
-- `graphlet.capture.frame_eval` contains an educational scaffold for the CPython eval-frame hook; it is not used by default.
-
-### 4) Auto-partitioned function (expr-level capture)
-```bash
-python -m examples.demo_auto_partition
-```
-This decorates the whole function and **partially captures** any sub-expressions built from `+` and `*`. Everything else (like `**`, loops, I/O) runs in normal Python.
-
-
-### 5) Bytecode region JIT (Dynamo-style partitioning)
+### 3) Bytecode region JIT (Dynamo-style partitioning)
 ```bash
 python -m examples.demo_region_jit
 ```
@@ -51,6 +29,11 @@ This interpreter walks your function's bytecode, **captures** straight-line arit
 executes them via the compiler, and **falls back** to Python for unsupported ops (e.g., `**`). The two modes interleave,
 so you get partial acceleration without rewriting your code.
 
+### 4) Constant Folding
+```bash
+python -m examples.demo_constfold
+```
+This shows how the compiler simplifies constant expressions at compile-time.
 
 ## Debug tracer
 Set `GRAPHLET_DEBUG=1` to trace region capture and execution:
@@ -62,3 +45,6 @@ GRAPHLET_DEBUG=1 python -m examples.demo_region_jit
 # [graphlet] EXEC graph region for node: add(mul(a, b), c)
 # [graphlet] FALLBACK Python op ** (power)
 ```
+
+## Notes
+- `graphlet.capture.frame_eval` is experimental and optional; it is not enabled by default and serves only as an educational scaffold.
