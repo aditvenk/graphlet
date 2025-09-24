@@ -127,13 +127,30 @@ class RegionInterpreter:
         assert sv.is_sym
         # Evaluate symbolic node under current env (materialize any symbolic locals first)
         env_py: Dict[str, Any] = {}
-        for name, val in self.env.items():
-            if isinstance(val, SymVal):
-                env_py[name] = self._materialize(val)
-                self.env[name] = SymVal(py=env_py[name])  # cache concrete
-            else:
+        for name, val in list(self.env.items()):
+            if not isinstance(val, SymVal):
                 env_py[name] = val
-        return self.session.eval_node(sv.node, env_py)
+            elif val.is_py:
+                env_py[name] = val.py
+            elif val is sv:
+                # Skip the SymVal we are currently materializing to avoid
+                # infinite recursion when it is stored in the environment.
+                continue
+            else:
+                py_val = self._materialize(val)
+                self.env[name] = SymVal(py=py_val)  # cache concrete
+                env_py[name] = py_val
+
+        result = self.session.eval_node(sv.node, env_py)
+
+        # Cache the concrete result for any environment entries that pointed to
+        # the symbolic value we just materialized. This prevents re-evaluating
+        # the graph if the same Python value is needed again.
+        for name, val in list(self.env.items()):
+            if val is sv:
+                self.env[name] = SymVal(py=result)
+
+        return result
 
 def region_jit(fn):
     """Decorator: interpret the function's bytecode.
