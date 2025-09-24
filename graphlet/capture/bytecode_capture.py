@@ -20,11 +20,18 @@ class BytecodeCapturer:
         g = Graph()
         inputs: Dict[str, Any] = {name: g.input(name) for name in sig.parameters.keys()}
         stack: List[Any] = []
+        locals_env: Dict[str, Any] = {}
 
         for instr in dis.get_instructions(fn):
             op = instr.opname
+            if op == "RESUME":  # Python 3.11+ artifact; no effect on stack.
+                continue
             if op == "LOAD_FAST":
-                stack.append(inputs[instr.argval])
+                name = instr.argval
+                if name in locals_env:
+                    stack.append(locals_env[name])
+                else:
+                    stack.append(inputs[name])
             elif op == "LOAD_CONST":
                 stack.append(g.const(instr.argval))
             elif self._is_binary_add(instr):
@@ -33,6 +40,8 @@ class BytecodeCapturer:
             elif self._is_binary_mul(instr):
                 b = stack.pop(); a = stack.pop()
                 stack.append(g.add_op("mul", a, b))
+            elif op == "STORE_FAST":
+                locals_env[instr.argval] = stack.pop()
             elif op == "RETURN_VALUE":
                 out = stack.pop()
                 g.set_outputs(out)
