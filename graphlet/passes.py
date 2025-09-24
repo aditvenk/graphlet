@@ -5,7 +5,7 @@ from .debug import log
 
 class ConstantFolding:
     """Fold add/mul with constant operands; propagate constants.
-    Runs to a simple fixed point (single sweep is usually enough for this toy).
+    Runs to a simple fixed point (single sweep is enough for this toy).
     """
     def run(self, g: Graph) -> Graph:
         g.relink()
@@ -33,6 +33,13 @@ class ConstantFolding:
         return g
 
 class DeadCodeElimination:
+    """
+    Remove nodes that do not contribute to the program outputs.
+
+    This pass performs a backward liveness analysis starting from the graph
+    outputs. Nodes that are not reachable from any output are considered dead
+    and removed.
+    """
     def run(self, g: Graph) -> Graph:
         g.relink()
         live: Set[Node] = set()
