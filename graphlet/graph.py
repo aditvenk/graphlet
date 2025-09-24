@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
 
-@dataclass
+@dataclass(eq=False)
 class Node:
     op: str
     inputs: List["Node"] = field(default_factory=list)
