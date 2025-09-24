@@ -48,3 +48,19 @@ GRAPHLET_DEBUG=1 python -m examples.demo_region_jit
 
 ## Notes
 - `graphlet.capture.frame_eval` is experimental and optional; it is not enabled by default and serves only as an educational scaffold.
+
+## Running Tests
+
+Graphlet uses `pytest` for testing. To run the full test suite, install the dev dependencies and run:
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+You can also run individual test files or functions:
+
+```bash
+pytest tests/test_compiler.py -v
+pytest -k "DeadCodeElimination"
+```
