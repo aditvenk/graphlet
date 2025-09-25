@@ -1,3 +1,31 @@
+"""
+region_jit.py
+=============
+
+This module implements a toy "region JIT" by interpreting Python bytecode
+and capturing certain arithmetic operations into a symbolic computation graph.
+
+How it works:
+-------------
+- A lightweight bytecode interpreter (`RegionInterpreter`) walks through the
+  function's bytecode instruction by instruction.
+- Supported arithmetic instructions (`+`, `*`) are "captured" into a `Graph`
+  of `Node` objects. Unsupported instructions are executed eagerly in Python.
+- A `CaptureSession` manages the symbolic graph and inputs.
+- When a symbolic value must be converted to a concrete Python value
+  (materialization), the graph is compiled using `Compiler` to apply simple
+  optimizations (dead code elimination, constant folding, etc.) and then
+  executed with the current Python environment values.
+- The `region_jit` decorator wraps a Python function to transparently enable
+  this behavior: supported arithmetic becomes graph regions, but everything
+  else falls back to normal Python execution.
+
+This design demonstrates a hybrid execution model similar in spirit to
+TorchDynamo or TensorFlow Autograph: Python code is run normally, while
+supported fragments are JIT-compiled into graph IR and optimized before
+execution.
+"""
+
 from __future__ import annotations
 import dis
 import inspect
