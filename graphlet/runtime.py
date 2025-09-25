@@ -1,4 +1,17 @@
 from __future__ import annotations
+"""
+Simplistic runtime for executing Graphlet graphs.
+
+This runtime is intended primarily for demonstration and testing.
+It provides eager evaluation of graphs using pure Python semantics
+and a small set of supported operations (currently input, const,
+add, and mul).
+
+The execution is recursive: each node is evaluated on demand,
+and results are memoized in a cache to avoid recomputation.
+This design is not optimized for performance, but offers clarity
+and simplicity for understanding how graphs are executed.
+"""
 from typing import Any, Dict
 from .graph import Graph, Node
 

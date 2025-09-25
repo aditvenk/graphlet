@@ -1,4 +1,16 @@
 from __future__ import annotations
+"""
+Core graph data structures for Graphlet.
+
+This module defines the Node and Graph classes:
+- Node: Represents an operation in the computation graph, with inputs,
+  attributes, and users that depend on it.
+- Graph: Container for nodes and graph outputs, with helpers for
+  creating inputs, constants, and operations, and for relinking or
+  dumping the graph for debugging.
+
+These classes form the foundation for compiler passes and execution.
+"""
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
 
