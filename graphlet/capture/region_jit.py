@@ -48,11 +48,16 @@ class CaptureSession:
 
     def eval_node(self, n: Node, env: Dict[str, Any]) -> Any:
         log(f"EXEC graph region for node: {n}")
-        # Temporarily set output to n and execute
+        # Temporarily set output to n and execute the *compiled* graph
         old_outs = list(self.g.outputs)
         self.g.set_outputs(n)
-        val = execute(self.g, **env)
-        self.g.outputs = old_outs
+        try:
+            # Compile the current graph to enable optimizations (e.g., DCE, const-fold)
+            g_opt = Compiler().compile(self.g)
+            val = execute(g_opt, **env)
+        finally:
+            # Restore original outputs regardless of success/failure
+            self.g.outputs = old_outs
         return val
 
 class RegionInterpreter:
@@ -156,6 +161,7 @@ def region_jit(fn):
     """Decorator: interpret the function's bytecode.
     Supported arithmetic (+, *) is captured as a graph region and executed via the compiler.
     Unsupported ops (e.g., **) are executed with Python semantics, seamlessly interleaving.
+    Captured regions are compiled with `Compiler` before being executed to apply optimizations.
     """
     def wrapped(*args, **kwargs):
         return RegionInterpreter(fn).run(*args, **kwargs)

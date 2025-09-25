@@ -42,13 +42,34 @@ class Graph:
         n = Node("const", [], attrs={"value": value}); self.nodes.append(n); return n
 
     def add_op(self, op: str, *inputs: Node, **attrs: Any) -> Node:
-        n = Node(op, list(inputs), attrs=attrs); self.nodes.append(n); return n
+        for i in inputs:
+            if i not in self.nodes:
+                raise ValueError(f"Input node {i!r} is not part of this graph")
+        n = Node(op, list(inputs), attrs=attrs)
+        self.nodes.append(n)
+        return n
 
     def set_outputs(self, *nodes: Node) -> None:
-        self.outputs = list(nodes)
+        for n in nodes:
+            if n not in self.nodes:
+                raise ValueError(
+                    f"Output node {n!r} is not part of this graph"
+                )
+        # Deduplicate while preserving order
+        seen = set()
+        self.outputs = [
+            o for o in nodes if (id(o) not in seen and not seen.add(id(o)))
+        ]
 
     def relink(self) -> None:
         for n in self.nodes: n.users.clear()
+        # Validate that all inputs of nodes are within this graph
+        for n in self.nodes:
+            for i in n.inputs:
+                if i not in self.nodes:
+                    raise ValueError(
+                        f"Node {n!r} has input {i!r} not in this graph"
+                    )
         for n in self.nodes:
             for i in n.inputs: i.users.add(n)
 
@@ -56,6 +77,6 @@ class Graph:
         lines = []
         for idx, n in enumerate(self.nodes):
             lines.append(f"%{idx}: {n!r}")
-        outs = ", ".join(f"%{self.nodes.index(o)}" for o in self.outputs if o in self.nodes)
+        outs = ", ".join(f"%{self.nodes.index(o)}" for o in self.outputs)
         lines.append(f"outputs: {outs}")
         return "\n".join(lines)
